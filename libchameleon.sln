@@ -1,0 +1,40 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.24720.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libchameleon", "libchameleon\libchameleon.vcxproj", "{D2292958-A47F-447A-A85F-4F286F6062C2}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug Static|x64 = Debug Static|x64
+		Debug Static|x86 = Debug Static|x86
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release Static|x64 = Release Static|x64
+		Release Static|x86 = Release Static|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D2292958-A47F-447A-A85F-4F286F6062C2}.Debug Static|x64.ActiveCfg = Debug Static|x64
+		{D2292958-A47F-447A-A85F-4F286F6062C2}.Debug Static|x64.Build.0 = Debug Static|x64
+		{D2292958-A47F-447A-A85F-4F286F6062C2}.Debug Static|x86.ActiveCfg = Debug Static|Win32
+		{D2292958-A47F-447A-A85F-4F286F6062C2}.Debug Static|x86.Build.0 = Debug Static|Win32
+		{D2292958-A47F-447A-A85F-4F286F6062C2}.Debug|x64.ActiveCfg = Debug|x64
+		{D2292958-A47F-447A-A85F-4F286F6062C2}.Debug|x64.Build.0 = Debug|x64
+		{D2292958-A47F-447A-A85F-4F286F6062C2}.Debug|x86.ActiveCfg = Debug|Win32
+		{D2292958-A47F-447A-A85F-4F286F6062C2}.Debug|x86.Build.0 = Debug|Win32
+		{D2292958-A47F-447A-A85F-4F286F6062C2}.Release Static|x64.ActiveCfg = Release Static|x64
+		{D2292958-A47F-447A-A85F-4F286F6062C2}.Release Static|x64.Build.0 = Release Static|x64
+		{D2292958-A47F-447A-A85F-4F286F6062C2}.Release Static|x86.ActiveCfg = Release Static|Win32
+		{D2292958-A47F-447A-A85F-4F286F6062C2}.Release Static|x86.Build.0 = Release Static|Win32
+		{D2292958-A47F-447A-A85F-4F286F6062C2}.Release|x64.ActiveCfg = Release|x64
+		{D2292958-A47F-447A-A85F-4F286F6062C2}.Release|x64.Build.0 = Release|x64
+		{D2292958-A47F-447A-A85F-4F286F6062C2}.Release|x86.ActiveCfg = Release|Win32
+		{D2292958-A47F-447A-A85F-4F286F6062C2}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
