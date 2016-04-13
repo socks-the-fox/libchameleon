@@ -4,6 +4,8 @@ extern "C" {
 #else
 #include <stdint.h>
 #endif
+#define CHAMELEON_VERSION 0x01000000
+
 	enum ChameleonColor
 	{
 		CHAMELEON_BACKGROUND1,
@@ -34,6 +36,8 @@ extern "C" {
 		float contrastWeight;
 	};
 
+	uint32_t chameleonVersion();
+
 	Chameleon* createChameleon(void);
 	void destroyChameleon(Chameleon* chameleon);
 
@@ -44,14 +48,14 @@ extern "C" {
 		 lineWidth: width of the data in pixels
 		 edgeLine: true if first/last line of image, else false
 	*/
-	void chameleonProcessLine(Chameleon *chameleon, const uint32_t *lineData, size_t lineWidth, bool edgeLine);
+	void chameleonProcessLine(Chameleon *chameleon, const uint32_t *lineData, size_t lineWidth, bool edgeLine, bool alpha = false);
 
-	void chameleonProcessImage(Chameleon *chameleon, const uint32_t *imgData, size_t imgWidth, size_t imgHeight, bool resample = true, bool alpha = false);
+	void chameleonProcessImage(Chameleon *chameleon, const uint32_t *imgData, size_t imgWidth, size_t imgHeight, bool alpha = false);
 
 	/*
 		Calculates the key FG/BG colors for the image
 	*/
-	void chameleonFindKeyColors(Chameleon *chameleon, const ChameleonParams *params, bool foreContrast = true);
+	void chameleonFindKeyColors(Chameleon *chameleon, const ChameleonParams *params, bool forceContrast = true);
 
 	/*
 		Get the specified color from the processed data

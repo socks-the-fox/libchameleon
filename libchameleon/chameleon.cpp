@@ -7,6 +7,13 @@
 extern const ChameleonParams defaultImageParams[4];
 extern const ChameleonParams defaultIconParams[4];
 
+// Let the program compare the returned version to the version they're expecting
+uint32_t chameleonVersion()
+{
+	return CHAMELEON_VERSION;
+}
+
+// Set up the core chameleon object with some error-detecting defaults
 Chameleon* createChameleon()
 {
 	Chameleon *result = new Chameleon;
@@ -28,18 +35,21 @@ Chameleon* createChameleon()
 	return result;
 }
 
+// Delete the chameleon object
 void destroyChameleon(Chameleon *chameleon)
 {
 	_aligned_free(chameleon->colors);
 	delete chameleon;
 }
 
-void chameleonProcessLine(Chameleon *chameleon, const uint32_t *lineData, size_t lineWidth, bool edgeLine)
+// Processes all the colors in the line of image data into it's separate buckets
+void chameleonProcessLine(Chameleon *chameleon, const uint32_t *lineData, size_t lineWidth, bool edgeLine, bool alpha)
 {
 	ColorStat *stat = chameleon->colors;
 
 	uint16_t cIndex = 0;
 
+	// float instead of bool to shut up compiler warnings, since we're adding it to a running count
 	float edge = (edgeLine ? 1.0f : 0.0f);
 
 	__m128 rgbc;
@@ -47,19 +57,25 @@ void chameleonProcessLine(Chameleon *chameleon, const uint32_t *lineData, size_t
 	for (size_t i = 0; i < lineWidth; ++i)
 	{
 		// Ignore pixels that are mostly transparent
-		if ((lineData[i] & 0xFF000000) < 0xC0000000)
+		if (alpha && (lineData[i] & 0xFF000000) < 0xC0000000)
 			continue;
 
+		// Find the color bucket
 		cIndex = XRGB5(lineData[i]);
 
-		rgbc = _mm_set_ps(1.0f, ((lineData[i] & 0x00FF0000) >> 16) / 255.0f, ((lineData[i] & 0x0000FF00) >> 8) / 255.0f, ((lineData[i] & 0x000000FF)) / 255.0f);
+		// Add the normalized color value to the bucket, to be divided later to get the average color
+		rgbc = _mm_set_ps(1.0f, static_cast<float>((lineData[i] & 0x00FF0000) >> 16), static_cast<float>((lineData[i] & 0x0000FF00) >> 8), static_cast<float>(lineData[i] & 0x000000FF));
+		rgbc = _mm_div_ps(rgbc, _mm_set_ps(1, 255.0f, 255.0f, 255.0f));
 
 		stat[cIndex].rgbc = _mm_add_ps(rgbc, stat[cIndex].rgbc);
 		stat[AVG_INDEX].rgbc = _mm_add_ps(rgbc, stat[AVG_INDEX].rgbc);
 
+		// Add whether or not this color was on an edge line to the bucket
 		stat[cIndex].edgeCount += edge;
 	}
 
+	// If it wasn't an edge line, we still need to count the leftmost and rightmost pixels
+	// Otherwise, just update the overall running tally of edge pixels
 	if (!edgeLine)
 	{
 		if ((lineData[0] & 0xFF000000) >= 0xC0000000)
@@ -79,73 +95,19 @@ void chameleonProcessLine(Chameleon *chameleon, const uint32_t *lineData, size_t
 		chameleon->edgecount += lineWidth;
 	}
 
+	// And update the overal pixel count
 	chameleon->pixelcount += lineWidth;
 }
 
-void chameleonProcessImage(Chameleon *chameleon, const uint32_t *imgData, size_t imgWidth, size_t imgHeight, bool resample, bool alpha)
+// Convenience function to process the entire image
+void chameleonProcessImage(Chameleon *chameleon, const uint32_t *imgData, size_t imgWidth, size_t imgHeight, bool alpha)
 {
-	uint32_t *resampledData = nullptr;
-	// if img is > 128*128 and resample == true, resample the image.
-	if ((imgWidth > 128 || imgHeight > 128) && resample)
-	{
-		// TODO: Convert to use floats to better space the samples
-		size_t newWidth = 0, newHeight = 0;
-		size_t widthStep = 1, heightStep = 1;
-		if (imgWidth > 256)
-		{
-			newWidth = 256;
-			widthStep = imgWidth / 255;
-		}
-		else
-		{
-			newWidth = imgWidth;
-		}
-		
-		if (imgHeight > 256)
-		{
-			newHeight = 256;
-			heightStep = imgHeight / 255;
-		}
-		else
-		{
-			newHeight = imgHeight;
-		}
-
-		resampledData = new uint32_t[newWidth * newHeight];
-
-		// Max alpha if we're ignoring it
-		uint32_t alphaVal = (alpha ? 0 : 0xFF000000);
-
-		for (size_t y = 0; y < newHeight - 1; ++y)
-		{
-			for (size_t x = 0; x < newWidth - 1; ++x)
-			{
-				resampledData[x + (y * newWidth)] = imgData[(x * widthStep) + ((y * heightStep) * imgWidth)] | alphaVal;
-			}
-
-			resampledData[(newWidth - 1) + (y * newWidth)] = imgData[(imgWidth - 1) + ((y * heightStep) * imgWidth)] | alphaVal;
-		}
-
-		for (size_t x = 0; x < newWidth - 1; ++x)
-		{
-			resampledData[x + ((newHeight - 1) * newWidth)] = imgData[(x * widthStep) + ((imgHeight - 1) * imgWidth)] | alphaVal;
-		}
-
-		resampledData[(newWidth - 1) + ((newHeight - 1) * newWidth)] = imgData[(imgWidth - 1) + ((imgHeight - 1) * imgWidth)] | alphaVal;
-
-		imgData = resampledData;
-		imgWidth = newWidth;
-		imgHeight = newHeight;
-	}
-
 	for (size_t i = 0; i < imgHeight; ++i)
 	{
-		chameleonProcessLine(chameleon, &imgData[imgWidth * i], imgWidth, (i == 0 || i == (imgHeight - 1)));
+		chameleonProcessLine(chameleon, &imgData[imgWidth * i], imgWidth, (i == 0 || i == (imgHeight - 1)), alpha);
 	}
 
 	chameleon->rgbFixed = false;
-
-	delete[] resampledData;
 }
 
 void chameleonFindKeyColors(Chameleon *chameleon, const ChameleonParams *params, bool forceContrast)
@@ -263,6 +225,7 @@ void chameleonFindKeyColors(Chameleon *chameleon, const ChameleonParams *params,
 		}
 	}
 
+	// Set some sane values for secondary colors if we couldn't find anything suitable
 	if (bg2 == INVALID_INDEX)
 	{
 		bg2 = bg1;
@@ -275,10 +238,8 @@ void chameleonFindKeyColors(Chameleon *chameleon, const ChameleonParams *params,
 
 	if (forceContrast)
 	{
-		// Find the contrast between the background and the foreground
-		float cont = contrast(&stat[fg1], &stat[bg1]);
-		float factor = (cont / MIN_CONTRAST);
-
+		// Force black to black and white to white if neither already has a color
+		// (i.e. there wasn't anything dark or bright enough for those buckets)
 		if (stat[0].count == 0)
 		{
 			stat[0].rgbc = _mm_set_ps(0, 0, 0, 0);
@@ -289,10 +250,19 @@ void chameleonFindKeyColors(Chameleon *chameleon, const ChameleonParams *params,
 			stat[LAST_COLOR].rgbc = _mm_set_ps(0, 1, 1, 1);
 		}
 
+		// Find the contrast between the background and the foreground
+		float cont = contrast(&stat[fg1], &stat[bg1]);
+
+		// Find out how far off the actual contrast is from the minimum contrast
+		float factor = (cont / MIN_CONTRAST);
+
 		if (cont < MIN_CONTRAST)
 		{
 			stat[FG1_BACKUP_INDEX] = stat[fg1];
 			fg1 = FG1_BACKUP_INDEX;
+
+			// If the image is bright, we want to push the brightness down
+			// If it's dark, we want to push it up, but cap it.
 
 			if (stat[bg1].y > 0.5f)
 			{
@@ -320,6 +290,7 @@ void chameleonFindKeyColors(Chameleon *chameleon, const ChameleonParams *params,
 			calcYUV(&stat[FG1_BACKUP_INDEX], 1);
 		}
 
+		// Repeat for the secondary foreground color
 		cont = contrast(&stat[fg2], &stat[bg1]);
 		factor = (cont / MIN_CONTRAST);
 
@@ -354,6 +325,7 @@ void chameleonFindKeyColors(Chameleon *chameleon, const ChameleonParams *params,
 			calcYUV(&stat[FG2_BACKUP_INDEX], 1);
 		}
 
+		// Make sure there's a decent contrast between the secondary background and the other colors
 		if (contrast(&stat[fg1], &stat[bg2]) < (MIN_CONTRAST / 1.3) || contrast(&stat[fg2], &stat[bg2]) < (MIN_CONTRAST / 1.3))
 		{
 			bg2 = bg1;
