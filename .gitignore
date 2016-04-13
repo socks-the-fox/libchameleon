@@ -10,6 +10,8 @@
 
 [Dd]ebug/
 [Rr]elease/
+[Dd]ebug [Ss]tatic/
+[Rr]elease [Ss]tatic/
 x64/
 x86/
 build/
