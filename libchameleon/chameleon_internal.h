@@ -1,3 +1,11 @@
+/*
+
+libChameleon is under the 3 Clause BSD License, see license.txt
+Copyright (c) 2015, Socks the Fox
+All rights reserved.
+
+*/
+
 #define INVALID_INDEX UINT16_MAX
 #define MAX_COLOR_STATS 67
 #define LAST_COLOR 0x3F

@@ -1,3 +1,11 @@
+/*
+
+libChameleon is under the 3 Clause BSD License, see license.txt
+Copyright (c) 2015, Socks the Fox
+All rights reserved.
+
+*/
+
 #ifdef __cplusplus
 #include <cstdint>
 extern "C" {
